@@ -14,7 +14,10 @@ const app = express();
 
 // Middleware to parse JSON and allow cross-origin requests
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: '*', // Allow all origins (specifically the Vercel URL later)
+  credentials: true
+}));
 
 // --- NEW LINES: Import and use the authentication routes ---
 const authRoutes = require('./routes/authRoutes');
@@ -35,13 +38,9 @@ app.use('/api/engagement', engagementRoutes);
 const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', adminRoutes);
 
-// Serve static files from the React frontend app
-const path = require('path');
-app.use(express.static(path.join(__dirname, 'frontend/dist')));
-
-// Fallback route for React Router (only matching GET requests so we don't swallow bad API POSTs)
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
+// Root Health Check Route
+app.get('/', (req, res) => {
+    res.status(200).send('Mess Backend API is actively running.');
 });
 
 // --- BACKGROUND JOB: Process Skips after Meal Ends ---

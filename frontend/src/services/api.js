@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API = axios.create({ baseURL: '/api' });
+const API = axios.create({ 
+  // Read VITE_API_URL from deployment environment, fallback to '/api' for local proxy
+  baseURL: import.meta.env.VITE_API_URL || '/api' 
+});
 
 // Attach JWT token to every request
 API.interceptors.request.use((config) => {

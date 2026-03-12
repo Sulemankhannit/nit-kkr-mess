@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NITK Mess Admin</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+
+<body>
+
+    <header>
+        <div class="container nav-container">
+            <a href="/dashboard.html" class="logo">
+                <div class="logo-icon" style="background: linear-gradient(135deg, var(--danger), var(--accent));">🛡️
+                </div>
+                NITK Mess Admin
+            </a>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-secondary" onclick="logout()" id="logout-btn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container" style="flex:1;">
+
+        <div class="dashboard-header">
+            <div>
+                <h1>Admin Control Panel</h1>
+                <p>Welcome, <span id="user-name-display" style="color:var(--primary); font-weight:bold;">Admin</span>.
+                    Manage the mess system here.</p>
+            </div>
+            <div>
+                <button class="btn-primary" style="background: var(--secondary);">Total Students: 320</button>
+            </div>
+        </div>
+
+        <div class="grid-3">
+            <!-- Menu Controls Component -->
+            <div class="glass-panel"
+                style="grid-column: span 3; text-align: center; background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2);">
+                <h2 style="color: var(--secondary); margin-bottom: 20px;">Menu Management</h2>
+                <button class="btn-primary" style="background: var(--secondary); font-size: 1.1rem; padding: 12px 30px;"
+                    onclick="openMenuModal()">
+                    📝 Create New Weekly Menu
+                </button>
+            </div>
+
+            <!-- Pending Rebates Component -->
+            <div class="glass-panel"
+                style="grid-column: span 2; background: rgba(79, 70, 229, 0.05); border-color: rgba(79, 70, 229, 0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="color: var(--primary); margin: 0;">Rebate Applications</h2>
+                    <span id="pending-rebates-count"
+                        style="background: var(--primary); color: white; padding: 2px 10px; border-radius: 15px; font-size: 0.9rem;">0</span>
+                </div>
+                <div id="rebates-container" style="max-height: 250px; overflow-y: auto; padding-right: 10px;">
+                    <p class="text-muted text-center">Loading rebates...</p>
+                </div>
+            </div>
+
+            <!-- Side Panel Stats / Create Poll -->
+            <div>
+                <div class="glass-panel mb-4" id="cook-sheet-panel">
+                    <h3>Cook-Sheet (Next 3 Days)</h3>
+                    <div id="cook-sheet-container" style="max-height: 250px; overflow-y: auto; font-size: 0.9rem;">
+                        <p class="text-muted">Loading headcounts...</p>
+                    </div>
+                </div>
+
+                <!-- NEW: Attendance & Rewards Panel -->
+                <div class="glass-panel mb-4"
+                    style="background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2);">
+                    <h3 style="color: var(--secondary); margin-bottom: 15px;">🛡️ Scanner & Attendance</h3>
+
+                    <div style="margin-bottom: 20px; text-align: center;">
+                        <label for="scanner-mode"
+                            style="font-size: 0.9rem; margin-right: 10px; font-weight: bold; color: var(--text-muted);">Scanner
+                            Mode:</label>
+                        <select id="scanner-mode" class="form-control"
+                            style="width: auto; display: inline-block; margin-bottom: 15px; padding: 5px; font-weight: bold;">
+                            <option value="attendance">🍽️ Mark Attendance</option>
+                            <option value="reward">🎁 Verify Reward</option>
+                        </select>
+                        <button id="btn-start-scanner" class="btn-primary" style="width: 100%; margin-bottom: 10px;"
+                            onclick="startQRScanner()">📷 Start Camera Scanner</button>
+                        <div id="reader" style="width: 100%; max-width: 400px; margin: 0 auto; display: none;"></div>
+                        <button id="btn-stop-scanner" class="btn-secondary"
+                            style="width: 100%; margin-top: 10px; display: none;" onclick="stopQRScanner()">Stop
+                            Camera</button>
+                    </div>
+
+                    <form id="form-mark-attendance" onsubmit="handleMarkAttendance(event)"
+                        style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <label style="font-size: 0.85rem; color: var(--text-muted);">Mark Student Attendence
+                            (ID)</label>
+                        <div style="display: flex; gap: 10px; margin-top: 5px;">
+                            <input type="text" id="attendance_student_id" class="form-control"
+                                placeholder="Enter User ID" required style="padding: 8px; flex: 1;">
+                            <button type="submit" class="btn-primary"
+                                style="background: var(--secondary); padding: 8px 15px;">Mark</button>
+                        </div>
+                    </form>
+
+                    <form id="form-verify-reward" onsubmit="handleVerifyReward(event)">
+                        <label style="font-size: 0.85rem; color: var(--text-muted);">Verify Reward / Ice Cream
+                            (QR)</label>
+                        <div style="display: flex; gap: 10px; margin-top: 5px;">
+                            <input type="text" id="reward_qr_payload" class="form-control"
+                                placeholder="Enter User ID (QR)" required style="padding: 8px; flex: 1;">
+                            <button type="submit" class="btn-primary"
+                                style="background: var(--accent); padding: 8px 15px;">Verify</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="glass-panel mb-4"
+                    style="background: rgba(236, 72, 153, 0.05); border-color: rgba(236, 72, 153, 0.2);">
+                    <h3 style="color: var(--accent);">Create Live Poll</h3>
+                    <form id="form-create-poll" onsubmit="handleCreatePoll(event)">
+                        <div class="form-group mb-2">
+                            <label>Question</label>
+                            <input type="text" id="poll_question" class="form-control"
+                                placeholder="e.g., Which dessert for Sunday?" required style="padding: 8px;">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Options (Comma separated)</label>
+                            <input type="text" id="poll_options" class="form-control"
+                                placeholder="e.g., Ice Cream, Gulab Jamun" required style="padding: 8px;">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Duration (Minutes)</label>
+                            <input type="number" id="poll_duration" class="form-control" placeholder="e.g., 60" required
+                                style="padding: 8px;" min="1" value="60">
+                        </div>
+                        <button type="submit" class="btn-primary" style="width: 100%; background: var(--accent);">Launch
+                            Poll</button>
+                    </form>
+                </div>
+
+                <div class="glass-panel mb-4"
+                    style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3);">
+                    <h3 style="color: #f59e0b;">🤖 AI Predictor & Alerts</h3>
+                    <div id="ai-alerts-container" style="font-size: 0.85rem; color: #fcd34d;">
+                        Loading AI predictions...
+                    </div>
+                </div>
+
+                <div class="glass-panel mb-4"
+                    style="background: rgba(236, 72, 153, 0.05); border-color: rgba(236, 72, 153, 0.2);">
+                    <h3 style="color: var(--accent);">📊 Admin Polls Management</h3>
+                    <div id="admin-polls-container"
+                        style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                        <p class="text-muted">Loading polls...</p>
+                    </div>
+                </div>
+
+                <!-- NEW: Student Management -->
+                <div class="glass-panel mb-4"
+                    style="background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.2);">
+                    <h3 style="color: var(--warning); margin-bottom: 15px;">👤 Student Management</h3>
+                    <form id="form-search-student" onsubmit="searchStudentAdmin(event)" style="margin-bottom: 15px;">
+                        <label style="font-size: 0.85rem; color: var(--text-muted);">Search by Roll Number</label>
+                        <div style="display: flex; gap: 10px; margin-top: 5px;">
+                            <input type="text" id="admin_search_roll" class="form-control" placeholder="123456" required
+                                style="padding: 8px; flex: 1;">
+                            <button type="submit" class="btn-primary"
+                                style="background: var(--warning); padding: 8px 15px;">Search</button>
+                        </div>
+                    </form>
+
+                    <div id="admin-student-result" class="hidden"
+                        style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 15px; border: 1px solid rgba(255,255,255,0.1);">
+                        <h4 id="admin_res_name" style="color: var(--primary); margin-bottom: 5px;">Student Name</h4>
+                        <p id="admin_res_email"
+                            style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">
+                            email@nitkkr.ac.in</p>
+                        <p style="font-size: 1rem; font-weight: bold; color: var(--secondary); margin-bottom: 15px;">
+                            Current Bal: <span id="admin_res_balance" style="color:white;">Rs. 0</span>
+                        </p>
+
+                        <div
+                            style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 15px;">
+                            <span>Skips: <strong id="admin_res_skips" style="color: var(--accent);">0</strong></span>
+                            <span>Rebates: <strong id="admin_res_rebates"
+                                    style="color: var(--secondary);">0</strong></span>
+                            <span>Dues: <strong id="admin_res_dues" style="color: var(--danger);">0</strong></span>
+                        </div>
+
+                        <button id="admin_res_delete_btn" class="btn-primary"
+                            style="width: 100%; background: var(--danger); font-size: 0.85rem; padding: 8px;"
+                            onclick="adminDeleteStudent()">
+                            Delete Student Account
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn-primary"
+                    style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); padding: 15px; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);"
+                    onclick="generatePDFBills()" id="btn-generate-bills">
+                    📄 Generate & Email Bills (PDF)
+                </button>
+            </div>
+
+            <!-- Analytics Dashboard Section -->
+            <div class="glass-panel" style="grid-column: span 3; margin-top: 20px;">
+                <h2 style="color: var(--primary); margin-bottom: 20px;">Performance Analytics</h2>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                    <div>
+                        <h4 style="text-align: center; color: var(--text-muted);">Food Saved (kg) - Last 7 Days</h4>
+                        <canvas id="chartFoodWaste"></canvas>
+                    </div>
+                    <div>
+                        <h4 style="text-align: center; color: var(--text-muted);">Money Saved (Reduced Wastage)</h4>
+                        <canvas id="chartMoneySaved"></canvas>
+                    </div>
+                    <div>
+                        <div>
+                            <h4 style="text-align: center; color: var(--text-muted);">Avg Meal Rating (Last 7 Days):
+                                <span id="avg-rating-display">-</span>⭐</h4>
+                            <canvas id="chartMealRatings"></canvas>
+                        </div>
+                    </div>
+                    <!-- Meal Hall of Fame & Shame -->
+                    <div style="margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <!-- Top 3 Loved Meals -->
+                        <div class="glass-panel"
+                            style="background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2);">
+                            <h3 style="color: var(--secondary); margin-bottom: 15px;">🏆 Top 3 Loved Meals</h3>
+                            <div id="top-meals-container" style="max-height: 250px; overflow-y: auto;">
+                                <p class="text-muted">Loading meal data...</p>
+                            </div>
+                        </div>
+
+                        <!-- Bottom 3 Worst Meals -->
+                        <div class="glass-panel"
+                            style="background: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.2);">
+                            <h3 style="color: var(--danger); margin-bottom: 15px;">⚠️ Bottom 3 (Grievances)</h3>
+                            <div id="bad-meals-container" style="max-height: 250px; overflow-y: auto;">
+                                <p class="text-muted">Loading grievance data...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Menu Generation Modal -->
+        <div id="menu-modal" class="hidden"
+            style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+            <div class="glass-panel"
+                style="width: 100%; max-width: 600px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto;">
+                <button onclick="closeMenuModal()"
+                    style="position: absolute; right: 20px; top: 20px; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">×</button>
+                <h2 style="color: var(--secondary); margin-bottom: 20px;">Weekly Menu Upload</h2>
+                <form id="form-upload-menu" onsubmit="handleWeeklyUpload(event)" style="text-align: left;">
+                    <div class="form-group mb-3">
+                        <label>Week Start Date (Monday)</label>
+                        <input type="date" id="upload_date" class="form-control" required style="padding: 8px;">
+                    </div>
+
+                    <div style="max-height: 300px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px;"
+                        id="menu-days-container">
+                        <details open
+                            style="margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;">
+                            <summary style="font-weight: bold; cursor: pointer; padding: 5px;">Monday</summary><input
+                                type="text" id="mon_b" class="form-control mb-2 mt-2"
+                                placeholder="Breakfast (e.g. Aloo Paratha, Tea)"
+                                style="font-size: 0.8rem; padding: 5px;" required><input type="text" id="mon_l"
+                                class="form-control mb-2" placeholder="Lunch (e.g. Rajma, Rice, Roti)"
+                                style="font-size: 0.8rem; padding: 5px;" required><input type="text" id="mon_d"
+                                class="form-control mb-2" placeholder="Dinner (e.g. Mixed Veg, Dal, Milk)"
+                                style="font-size: 0.8rem; padding: 5px;" required>
+                        </details>
+                        <details
+                            style="margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;">
+                            <summary style="font-weight: bold; cursor: pointer; padding: 5px;">Tuesday</summary><input
+                                type="text" id="tue_b" class="form-control mb-2 mt-2" placeholder="Breakfast"
+                                style="font-size: 0.8rem; padding: 5px;" required><input type="text" id="tue_l"
+                                class="form-control mb-2" placeholder="Lunch" style="font-size: 0.8rem; padding: 5px;"
+                                required><input type="text" id="tue_d" class="form-control mb-2" placeholder="Dinner"
+                                style="font-size: 0.8rem; padding: 5px;" required>
+                        </details>
+                        <details
+                            style="margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;">
+                            <summary style="font-weight: bold; cursor: pointer; padding: 5px;">Wednesday</summary><input
+                                type="text" id="wed_b" class="form-control mb-2 mt-2" placeholder="Breakfast"
+                                style="font-size: 0.8rem; padding: 5px;" required><input type="text" id="wed_l"
+                                class="form-control mb-2" placeholder="Lunch" style="font-size: 0.8rem; padding: 5px;"
+                                required><input type="text" id="wed_d" class="form-control mb-2" placeholder="Dinner"
+                                style="font-size: 0.8rem; padding: 5px;" required>
+                        </details>
+                        <details
+                            style="margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;">
+                            <summary style="font-weight: bold; cursor: pointer; padding: 5px;">Thursday</summary><input
+                                type="text" id="thu_b" class="form-control mb-2 mt-2" placeholder="Breakfast"
+                                style="font-size: 0.8rem; padding: 5px;" required><input type="text" id="thu_l"
+                                class="form-control mb-2" placeholder="Lunch" style="font-size: 0.8rem; padding: 5px;"
+                                required><input type="text" id="thu_d" class="form-control mb-2" placeholder="Dinner"
+                                style="font-size: 0.8rem; padding: 5px;" required>
+                        </details>
+                        <details
+                            style="margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;">
+                            <summary style="font-weight: bold; cursor: pointer; padding: 5px;">Friday</summary><input
+                                type="text" id="fri_b" class="form-control mb-2 mt-2" placeholder="Breakfast"
+                                style="font-size: 0.8rem; padding: 5px;" required><input type="text" id="fri_l"
+                                class="form-control mb-2" placeholder="Lunch" style="font-size: 0.8rem; padding: 5px;"
+                                required><input type="text" id="fri_d" class="form-control mb-2" placeholder="Dinner"
+                                style="font-size: 0.8rem; padding: 5px;" required>
+                        </details>
+                        <details
+                            style="margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;">
+                            <summary style="font-weight: bold; cursor: pointer; padding: 5px;">Saturday</summary><input
+                                type="text" id="sat_b" class="form-control mb-2 mt-2" placeholder="Breakfast"
+                                style="font-size: 0.8rem; padding: 5px;" required><input type="text" id="sat_l"
+                                class="form-control mb-2" placeholder="Lunch" style="font-size: 0.8rem; padding: 5px;"
+                                required><input type="text" id="sat_d" class="form-control mb-2" placeholder="Dinner"
+                                style="font-size: 0.8rem; padding: 5px;" required>
+                        </details>
+                        <details
+                            style="margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;">
+                            <summary style="font-weight: bold; cursor: pointer; padding: 5px;">Sunday</summary><input
+                                type="text" id="sun_b" class="form-control mb-2 mt-2" placeholder="Breakfast"
+                                style="font-size: 0.8rem; padding: 5px;" required><input type="text" id="sun_l"
+                                class="form-control mb-2" placeholder="Lunch" style="font-size: 0.8rem; padding: 5px;"
+                                required><input type="text" id="sun_d" class="form-control mb-2" placeholder="Dinner"
+                                style="font-size: 0.8rem; padding: 5px;" required>
+                        </details>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%;">🚀 Generate 21 Meals</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Toast Notifications Container -->
+        <div id="toast-container"></div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="/js/app.js"></script>
+</body>
+
+</html>

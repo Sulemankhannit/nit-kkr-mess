@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NITK Mess System</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+
+<body>
+
+    <header>
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <div class="logo-icon">🍽️</div>
+                NITK Mess Connect
+            </a>
+            <div id="nav-actions" style="display: flex; gap: 10px; align-items: center;">
+                <button class="btn-primary"
+                    style="background: var(--primary); font-size: 0.8rem; padding: 5px 15px; display:none;"
+                    onclick="openProfileModal()" id="profile-btn">👤 My Profile</button>
+                <button class="btn-secondary" onclick="logout()" id="logout-btn"
+                    style="display:none; padding: 5px 15px;">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container" style="flex:1;">
+
+        <!-- === AUTHENTICATION SECTION (Visible if not logged in) === -->
+        <section id="auth-section" class="auth-wrapper">
+
+            <!-- Login Form -->
+            <div id="loginForm" class="glass-panel auth-card">
+                <div class="text-center mb-4">
+                    <h2>Welcome Back</h2>
+                    <p>Enter your credentials to access your mess dashboard.</p>
+                </div>
+                <form id="form-login">
+                    <div class="form-group">
+                        <label>Institute Email</label>
+                        <input type="email" id="log_email" class="form-control" placeholder="user@nitkkr.ac.in"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="log_password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Sign In</button>
+                </form>
+                <div class="text-center mt-4">
+                    <p class="text-muted" style="font-size:0.9rem;">
+                        Don't have an account? <a href="#" onclick="toggleAuthView('registerForm')"
+                            style="color: var(--primary);">Register</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" class="glass-panel auth-card hidden">
+                <div class="text-center mb-4">
+                    <h2>Create Account</h2>
+                    <p>Register using your official NIT Kurukshetra email.</p>
+                </div>
+                <form id="form-register">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="reg_name" class="form-control" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Institute Email</label>
+                        <input type="email" id="reg_email" class="form-control" placeholder="user@nitkkr.ac.in"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select id="reg_role" class="form-control" required style="padding: 8px;">
+                            <option value="student" selected>Student</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="reg_password" class="form-control" placeholder="Create a password"
+                            required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Send Verification
+                        Email</button>
+                </form>
+                <div class="text-center mt-4">
+                    <p class="text-muted" style="font-size:0.9rem;">
+                        Already registered? <a href="#" onclick="toggleAuthView('loginForm')"
+                            style="color: var(--primary);">Sign In</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- OTP Verification Form -->
+            <div id="verifyForm" class="glass-panel auth-card hidden">
+                <div class="text-center mb-4">
+                    <h2>Verify Your Email</h2>
+                    <p>We've sent a 6-digit OTP to your email address.</p>
+                </div>
+                <form id="form-verify">
+                    <input type="hidden" id="verify_email">
+                    <div class="form-group">
+                        <label>6-Digit OTP</label>
+                        <input type="text" id="verify_otp" class="form-control" placeholder="123456" required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Verify
+                        Account</button>
+                    <div class="text-center mt-3">
+                        <p class="text-muted" style="font-size:0.9rem; margin-bottom: 0;">
+                            Didn't receive code? <a href="#" onclick="handleResendOTP(event)"
+                                style="color: var(--primary);">Resend OTP</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+
+        </section>
+
+
+        <!-- === STUDENT MAIN SECTION (Visible if logged in as student) === -->
+        <section id="main-section" class="hidden pb-5">
+            <div class="dashboard-header">
+                <div>
+                    <h1>Hello, <span id="user-name-display">Student</span></h1>
+                    <p>Here is what is cooking in the mess today.</p>
+                </div>
+
+                <!-- Live Crowd Meter -->
+                <div class="glass-panel"
+                    style="padding: 15px 25px; border-color: rgba(236, 72, 153, 0.3); text-align: center; display: flex; flex-direction: column; justify-content: center; min-width: 150px;">
+                    <div
+                        style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 1px; margin-bottom: 5px;">
+                        🔥 Live Crowd</div>
+                    <div style="font-size: 2.5rem; font-weight: bold; color: var(--accent); line-height: 1;"
+                        id="live-crowd-count">--</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">entered in last 20 mins
+                    </div>
+                </div>
+                <!-- Live Ledger UI -->
+                <div class="glass-panel"
+                    style="padding: 15px 25px; border-color: var(--secondary); display: flex; gap: 30px; align-items: center;">
+                    <div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted);">Current Available Balance</div>
+                        <div id="live-ledger-total"
+                            style="font-size: 1.5rem; font-weight: bold; color: var(--secondary);">Rs. 4000</div>
+                        <div id="live-ledger-details"
+                            style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Rebates: -Rs. 0 |
+                            Guest Passes: -Rs. 0</div>
+                    </div>
+
+                    <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
+                        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 5px;">Reward Progress
+                        </div>
+                        <div
+                            style="background: rgba(255,255,255,0.1); border-radius: 10px; width: 150px; height: 10px; overflow: hidden;">
+                            <div id="reward-progress-bar"
+                                style="background: var(--accent); width: 0%; height: 100%; transition: width 0.5s ease;">
+                            </div>
+                        </div>
+                        <div id="reward-progress-text" style="font-size: 0.8rem; text-align: right; margin-top: 3px;">0
+                            / 3 Skips</div>
+                        <button id="btn-claim-reward" class="btn-primary"
+                            style="display:none; padding: 5px 10px; font-size: 0.8rem; margin-top: 5px; width: 100%; background: var(--accent);"
+                            onclick="claimReward()">🎁 Claim QR Code</button>
+                    </div>
+
+                    <!-- Unique Student Mess Pass -->
+                    <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px; text-align: center; cursor: pointer;"
+                        onclick="document.getElementById('pass-modal').classList.remove('hidden')">
+                        <div
+                            style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 5px;">
+                            My Mess Pass</div>
+                        <canvas id="mini-qr-canvas"
+                            style="width: 60px; height: 60px; border-radius: 5px; border: 2px solid var(--primary);"></canvas>
+                        <div style="font-size: 0.7rem; margin-top: 5px; color: var(--primary);">Tap to enlarge</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Student Impact & Analytics Section -->
+            <div style="margin-top: 30px;">
+                <h3 style="color: var(--primary); margin-bottom: 20px;">My Impact & Activity</h3>
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+
+                    <!-- Eco Footprint Card -->
+                    <div class="glass-panel text-center"
+                        style="background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2); padding: 25px;">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">🌍</div>
+                        <h4 style="color: var(--secondary); margin-bottom: 5px;">Eco-Footprint</h4>
+                        <div style="font-size: 2rem; font-weight: bold; color: var(--accent); line-height: 1;">
+                            <span id="eco-saved-kg">0</span> <span style="font-size: 1rem; color: var(--text-muted);">kg
+                                saved</span>
+                        </div>
+                        <p id="eco-impact-msg" style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">
+                            Loading impact...</p>
+                    </div>
+
+                    <!-- Attendance Heatmap (Last 30 Days) -->
+                    <div class="glass-panel" style="padding: 25px;">
+                        <h4 style="color: var(--primary); margin-bottom: 15px; text-align: center;">Attendance (Last 30
+                            Days)</h4>
+                        <div id="attendance-heatmap"
+                            style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                            <!-- Heatmap boxes generated by JS -->
+                            <p class="text-muted text-center" style="width: 100%;">Loading heatmap...</p>
+                        </div>
+                        <div
+                            style="display: flex; justify-content: center; gap: 15px; margin-top: 15px; font-size: 0.8rem; color: var(--text-muted);">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <div
+                                    style="width: 12px; height: 12px; background: rgba(16, 185, 129, 0.8); border-radius: 2px;">
+                                </div> Attended
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <div
+                                    style="width: 12px; height: 12px; background: rgba(239, 68, 68, 0.8); border-radius: 2px;">
+                                </div> Skipped
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <div
+                                    style="width: 12px; height: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 2px;">
+                                </div> No Data
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal for Enlarge Mess Pass display -->
+            <div id="pass-modal" class="hidden"
+                style="position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                <div class="glass-panel text-center pulse" style="border: 1px solid var(--accent);">
+                    <div style="font-size: 2rem; margin-bottom: 5px;">🎁</div>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin:0;">Unlock a special
+                        reward given after 2 skipped meals!</p>
+                </div>
+                <div class="glass-panel text-center" style="max-width: 400px; padding: 40px;">
+                    <h2 style="color: var(--primary); margin-bottom: 10px;">Entrance Pass</h2>
+                    <p style="font-size: 0.9rem;">Show this QR code at the entrance to automatically mark attendance.
+                    </p>
+                    <div
+                        style="background: white; padding: 10px; border-radius: 10px; margin: 20px auto; display: inline-block;">
+                        <canvas id="large-qr-canvas"></canvas>
+                    </div>
+                    <button class="btn-secondary" style="width: 100%; margin-top: 10px;"
+                        onclick="document.getElementById('pass-modal').classList.add('hidden')">Close</button>
+                </div>
+            </div>
+
+            <!-- Modal for QR Display -->
+            <div id="qr-modal" class="hidden"
+                style="position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                <div class="glass-panel text-center" style="max-width: 400px; padding: 40px;">
+                    <h2 style="color: var(--accent); margin-bottom: 10px;">Reward Unlocked!</h2>
+                    <p>Show this code to the mess staff to claim your free reward.</p>
+                    <div
+                        style="background: white; padding: 10px; border-radius: 10px; margin: 20px auto; display: inline-block;">
+                        <canvas id="qr-code-display"></canvas>
+                    </div>
+                    <button class="btn-secondary"
+                        onclick="document.getElementById('qr-modal').classList.add('hidden')">Close</button>
+                </div>
+            </div>
+
+            <!-- Modal for Student Profile -->
+            <div id="profile-modal" class="hidden"
+                style="position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                <div class="glass-panel text-center"
+                    style="max-width: 400px; padding: 40px; border: 1px solid var(--primary);">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">🎓</div>
+                    <h2 style="color: var(--primary); margin-bottom: 5px;" id="profile-name">Student Name</h2>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;" id="profile-roll">
+                        Loading Roll Number...</p>
+
+                    <div
+                        style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: left; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span class="text-muted">Available Skips:</span>
+                            <strong style="color: var(--accent);" id="profile-skips">0</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span class="text-muted">Guest Dues:</span>
+                            <strong style="color: var(--danger);" id="profile-dues">Rs. 0</strong>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" style="width: 100%; background: var(--secondary);"
+                        onclick="document.getElementById('profile-modal').classList.add('hidden')">Close
+                        Profile</button>
+                </div>
+            </div>
+
+            <!-- Modal for Meal Feedback -->
+            <div id="feedback-modal" class="hidden"
+                style="position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                <div class="glass-panel" style="max-width: 450px; padding: 30px; width: 100%;">
+                    <h2 style="color: var(--primary); margin-bottom: 5px;">Rate this Meal</h2>
+                    <p style="font-size: 0.9rem; margin-bottom: 20px;">Help us improve the food quality.</p>
+                    <form id="form-feedback" onsubmit="submitFeedback(event)">
+                        <input type="hidden" id="feedback_meal_id">
+                        <div class="form-group mb-3 text-center">
+                            <label style="display:block; text-align:left; margin-bottom: 10px;">Your Rating (1-5
+                                Stars)</label>
+                            <div style="font-size: 2rem; display: flex; justify-content: center; gap: 10px;"
+                                id="star-rating-container">
+                                <span class="star" onclick="setRating(1)" style="cursor: pointer; color: #444;">★</span>
+                                <span class="star" onclick="setRating(2)" style="cursor: pointer; color: #444;">★</span>
+                                <span class="star" onclick="setRating(3)" style="cursor: pointer; color: #444;">★</span>
+                                <span class="star" onclick="setRating(4)" style="cursor: pointer; color: #444;">★</span>
+                                <span class="star" onclick="setRating(5)" style="cursor: pointer; color: #444;">★</span>
+                            </div>
+                            <input type="hidden" id="feedback_rating" required>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label>Comments (Optional)</label>
+                            <textarea id="feedback_comments" class="form-control" rows="3"
+                                placeholder="Tell us what was good or bad..."></textarea>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit" class="btn-primary" style="flex: 1;">Submit Feedback</button>
+                            <button type="button" class="btn-secondary" style="flex: 1;"
+                                onclick="document.getElementById('feedback-modal').classList.add('hidden')">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Live Polls Section -->
+            <div id="live-polls-container"
+                style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <!-- Polls injected via JS -->
+            </div>
+
+            <!-- Official Rebate Application -->
+            <div class="glass-panel mb-4" style="background: rgba(79, 70, 229, 0.05);">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+                    <div style="flex: 1; min-width: 300px;">
+                        <h3 style="color: var(--primary);">Apply for Official Rebate</h3>
+                        <p style="font-size: 0.95rem;">Going home? Apply for a multi-day leave to get Rs. 130 deducted
+                            per day from your monthly bill.</p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;"
+                            id="rebate-limit-text">You have filed 0 / 10 rebate days this month.</p>
+                    </div>
+                    <form id="form-rebate" onsubmit="handleRebate(event)"
+                        style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; width: 100%;">
+                        <div>
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Start Date</label>
+                            <input type="date" id="rebate_start" class="form-control" required
+                                style="padding: 8px; width: 140px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">End Date</label>
+                            <input type="date" id="rebate_end" class="form-control" required
+                                style="padding: 8px; width: 140px;">
+                        </div>
+                        <div style="flex: 1; min-width: 150px;">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Phone Number</label>
+                            <input type="tel" id="rebate_phone" class="form-control" required
+                                placeholder="10-digit number" style="padding: 8px;">
+                        </div>
+                        <div style="flex: 2; min-width: 200px;">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Reason</label>
+                            <input type="text" id="rebate_reason" class="form-control" required
+                                placeholder="e.g. Going home for holidays" style="padding: 8px;">
+                        </div>
+                        <button type="submit" class="btn-primary" style="padding: 10px 20px;">Submit Request</button>
+                    </form>
+                </div>
+
+                <!-- My Rebates Section Link -->
+                <div class="glass-panel" style="margin-top: 20px; text-align: center;">
+                    <button class="btn-primary" style="width: 100%;" onclick="window.location.href='/myrebates.html'">
+                        📋 View My Rebates History
+                    </button>
+                    <p class="text-muted" style="margin-top: 10px; font-size: 0.85rem;">Track the status of your
+                        submitted rebates and view approved dates.</p>
+                </div>
+            </div>
+
+            <h2 class="mb-4">Today's Menu & RSVP</h2>
+            <div id="meals-container" class="grid-3 mb-4">
+                <div class="glass-panel text-center">
+                    <p>Loading menu...</p>
+                </div>
+            </div>
+
+            <h2 class="mb-4">Tomorrow's Menu & RSVP</h2>
+            <div id="tomorrow-meals-container" class="grid-3">
+                <div class="glass-panel text-center">
+                    <p>Loading menu...</p>
+                </div>
+            </div>
+
+            <div class="mt-4 glass-panel text-center"
+                style="background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.2);">
+                <p style="margin: 0; color: var(--accent);">
+                    <strong>Rule:</strong> RSVP buttons lock automatically 3 hours before the meal starts. Free unlock
+                    reward given after 2 skipped meals!
+                </p>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        // Set logout button visibility if logged in
+        if (localStorage.getItem('token')) {
+            document.getElementById('logout-btn').style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Rebates | NIT Kurukshetra Mess</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Include QR Code Library for potential future use -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <style>
+        .rebate-banner {
+            padding: 15px;
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .rebate-active {
+            background: rgba(16, 185, 129, 0.1);
+            /* Secondary Green */
+            color: var(--secondary);
+            border-color: var(--secondary);
+        }
+
+        .rebate-inactive {
+            background: rgba(255, 255, 255, 0.05);
+            /* Neutral */
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <div class="logo-icon">🍽️</div>
+                NIT Kurukshetra
+            </a>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-secondary" onclick="window.location.href='/'">Back to Dashboard</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container" style="padding: var(--spacing-xl) var(--spacing-lg);">
+        <h2 class="mb-4" style="color: var(--primary);">My Rebates</h2>
+
+        <!-- Live Status Banner -->
+        <div id="today-rebate-banner" class="rebate-banner rebate-inactive">
+            Checking today's rebate status...
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="color: var(--accent); margin-bottom: 15px;">Application History</h3>
+            <p class="text-muted" style="margin-bottom: 20px;">Review the status of your past and pending rebate
+                applications.</p>
+
+            <div id="my-rebates-container" style="display: flex; flex-direction: column; gap: 15px;">
+                <p class="text-muted">Loading your rebates...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        // Check Auth
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/';
+                return;
+            }
+
+            // Wait for app.js to attach its own listeners, then forcefully fetch
+            setTimeout(() => {
+                if (typeof fetchMyRebates === 'function') {
+                    fetchMyRebates();
+                }
+            }, 100);
+        });
+    </script>
+</body>
+
+</html>

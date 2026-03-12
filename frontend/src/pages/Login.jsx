@@ -62,7 +62,7 @@ export default function Login() {
         }
       } else if (err.request) {
         // Request was made but no response — backend probably not running
-        setError('Cannot reach the server. Make sure the backend is running on port 5000.');
+        setError('Cannot reach the server. Make sure your internet connection and backend URL are correct.');
       } else {
         setError('An unexpected error occurred. Please try again.');
       }

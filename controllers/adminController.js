@@ -5,43 +5,63 @@ const User = require('../models/User');
 
 exports.getCookSheet = async (req, res) => {
     try {
-        // Fetch meals for today and tomorrow
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Use IST (UTC+5:30) for date boundaries
+        const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+        const nowUTC = Date.now();
+        const nowIST = new Date(nowUTC + IST_OFFSET_MS);
 
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+        const todayIST = new Date(nowIST);
+        todayIST.setUTCHours(0, 0, 0, 0);
+        const todayStartUTC = new Date(todayIST.getTime() - IST_OFFSET_MS);
 
-        const dayAfterTomorrow = new Date(tomorrow);
-        dayAfterTomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowIST = new Date(todayIST);
+        tomorrowIST.setUTCDate(tomorrowIST.getUTCDate() + 1);
+        const tomorrowStartUTC = new Date(tomorrowIST.getTime() - IST_OFFSET_MS);
+
+        const dayAfterTomorrowIST = new Date(todayIST);
+        dayAfterTomorrowIST.setUTCDate(dayAfterTomorrowIST.getUTCDate() + 2);
+        const dayAfterTomorrowStartUTC = new Date(dayAfterTomorrowIST.getTime() - IST_OFFSET_MS);
 
         const meals = await Meal.find({
-            date: { $gte: today, $lt: dayAfterTomorrow }
+            date: { $gte: todayStartUTC, $lt: dayAfterTomorrowStartUTC }
         }).sort({ date: 1 });
 
         // Get total number of active registered students
         const totalStudentsCount = await User.countDocuments({ role: 'student' });
 
-        const formattedMeals = meals.map(meal => {
-            // New logic: Everyone is assumed to be eating UNLESS they actively skipped.
-            const calculatedHeadcount = totalStudentsCount - (meal.skippedStudents ? meal.skippedStudents.length : 0);
+        const mealOrder = { 'Breakfast': 0, 'Lunch': 1, 'Dinner': 2 };
 
-            return {
-                _id: meal._id,
-                date: meal.date,
-                type: meal.type,
-                name: meal.menuItems.join(', '),
-                headcount: calculatedHeadcount,
-                targetCookingVolume: calculatedHeadcount // Plates needed
-            };
+        const formatMeal = (meal) => ({
+            _id: meal._id,
+            date: meal.date,
+            type: meal.type,
+            menuItems: meal.menuItems,
+            name: meal.menuItems.join(', '),
+            headcount: Math.max(0, totalStudentsCount - (meal.skippedStudents?.length || 0)),
+            rsvpAttending: meal.attendingStudents?.length || 0,
+            rsvpSkipping: meal.skippedStudents?.length || 0,
         });
 
-        res.status(200).json({ cookSheet: formattedMeals });
+        const todayMeals = meals
+            .filter(m => new Date(m.date).getTime() < tomorrowStartUTC.getTime())
+            .map(formatMeal)
+            .sort((a, b) => (mealOrder[a.type] ?? 9) - (mealOrder[b.type] ?? 9));
+
+        const tomorrowMeals = meals
+            .filter(m => new Date(m.date).getTime() >= tomorrowStartUTC.getTime())
+            .map(formatMeal)
+            .sort((a, b) => (mealOrder[a.type] ?? 9) - (mealOrder[b.type] ?? 9));
+
+        // Keep legacy cookSheet for backward compat
+        const cookSheet = [...todayMeals, ...tomorrowMeals];
+
+        res.status(200).json({ cookSheet, todayMeals, tomorrowMeals, totalStudents: totalStudentsCount });
 
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
 
 exports.getAnalytics = async (req, res) => {
     try {

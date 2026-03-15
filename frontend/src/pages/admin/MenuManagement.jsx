@@ -44,8 +44,8 @@ export default function MenuManagement() {
     }
 
     try {
-      await API.post('/menu/upload-week', { startDate, menuData: formattedData });
-      alert('Weekly menu successfully generated and uploaded!');
+      const res = await API.post('/menu/upload-week', { startDate, menuData: formattedData });
+      alert(res.data.message);
       setMenuData(initialWeek);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to upload menu. Check if dates already exist.');
@@ -64,12 +64,15 @@ export default function MenuManagement() {
       </div>
 
       <div className="card" style={{ padding: 'var(--sp-6)' }}>
-        <h3 className="section-heading" style={{ textAlign: 'center', color: 'var(--color-primary)' }}>Create New Weekly Menu</h3>
+        <h3 className="section-heading" style={{ textAlign: 'center', color: 'var(--color-primary)' }}>Create Monthly Menu</h3>
+        <p style={{ textAlign: 'center', color: 'var(--color-text-secondary)', marginBottom: 'var(--sp-6)', fontSize: 'var(--text-sm)' }}>
+          Upload one week's menu — it auto-repeats for every remaining week of the month.
+        </p>
 
         <form onSubmit={handleSubmit}>
           <div style={{ maxWidth: '300px', margin: '0 auto var(--sp-8) auto' }}>
             <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 'var(--sp-2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Week Start Date (Monday)
+              Week Start Date (first day of this week)
             </label>
             <input
               type="date"
@@ -126,7 +129,7 @@ export default function MenuManagement() {
 
           <div style={{ textAlign: 'center', marginTop: 'var(--sp-10)' }}>
             <button type="submit" className="btn btn-primary btn-lg" disabled={loading} style={{ minWidth: '250px' }}>
-              {loading ? 'Processing...' : 'Generate 21 Meals'}
+              {loading ? 'Generating...' : '🗓️ Generate Full Month\'s Menu'}
             </button>
           </div>
         </form>

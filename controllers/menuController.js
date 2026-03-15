@@ -30,20 +30,15 @@ exports.createWeeklyMeals = async (req, res) => {
 exports.getTodayMeals = async (req, res) => {
     try {
         // IST is UTC+5:30 = 330 minutes ahead of UTC.
-        // Meals are stored with dates at midnight UTC (from a date-only string like "2026-03-16").
-        // We need to query a range that covers IST "today" and "tomorrow" in UTC terms.
-        const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in ms
+        const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
-        // Get current IST time, then find start of IST day
         const nowUTC = Date.now();
         const nowIST = new Date(nowUTC + IST_OFFSET_MS);
 
-        // Start of today in IST (midnight IST = previous day 18:30 UTC)
         const todayIST = new Date(nowIST);
         todayIST.setUTCHours(0, 0, 0, 0);
         const todayStartUTC = new Date(todayIST.getTime() - IST_OFFSET_MS);
 
-        // Start of day after tomorrow in IST
         const dayAfterTomorrowIST = new Date(todayIST);
         dayAfterTomorrowIST.setUTCDate(dayAfterTomorrowIST.getUTCDate() + 2);
         const dayAfterTomorrowStartUTC = new Date(dayAfterTomorrowIST.getTime() - IST_OFFSET_MS);

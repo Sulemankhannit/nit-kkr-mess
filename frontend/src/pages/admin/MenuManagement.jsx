@@ -2,7 +2,14 @@ import { useState } from 'react';
 import API from '../../services/api';
 
 export default function MenuManagement() {
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const getISTDateString = () => {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + istOffset);
+    return istDate.toISOString().split('T')[0];
+  };
+  const [startDate, setStartDate] = useState(getISTDateString());
+
 
   const initialWeek = {
     monday: { breakfast: '', lunch: '', dinner: '' },

@@ -1,4 +1,4 @@
-# 🍽️ NIT KKR Mess Management System
+# 🍽️ MESSMATE-(NIT KKR Digital and Green Mess Management System)
 
 <div align="center">
 
